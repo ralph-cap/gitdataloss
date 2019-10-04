@@ -1,49 +1,363 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<title>reveal.js</title>
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-		<link rel="stylesheet" href="reveal.js-3.8.0/css/reset.css">
-		<link rel="stylesheet" href="reveal.js-3.8.0/css/reveal.css">
-		<link rel="stylesheet" href="reveal.js-3.8.0/css/theme/black.css">
+	<title>reveal.js</title>
 
-		<!-- Theme used for syntax highlighting of code -->
-		<link rel="stylesheet" href="reveal.js-3.8.0/lib/css/monokai.css">
+	<link rel="stylesheet" href="reveal.js-3.8.0/css/reset.css" />
+	<link rel="stylesheet" href="reveal.js-3.8.0/css/reveal.css" />
+	<link rel="stylesheet" href="reveal.js-3.8.0/css/theme/white.css" />
 
-		<!-- Printing and PDF exports -->
-		<script>
-			var link = document.createElement( 'link' );
-			link.rel = 'stylesheet';
-			link.type = 'text/css';
-			link.href = window.location.search.match( /print-pdf/gi ) ? 'reveal.js-3.8.0/css/print/pdf.css' : 'reveal.js-3.8.0/css/print/paper.css';
-			document.getElementsByTagName( 'head' )[0].appendChild( link );
-		</script>
-	</head>
-	<body>
-		<div class="reveal">
-			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
+	<!-- Theme used for syntax highlighting of code -->
+	<link rel="stylesheet" href="reveal.js-3.8.0/lib/css/monokai.css" />
+
+	<!-- Printing and PDF exports -->
+	<script>
+		var link = document.createElement("link");
+		link.rel = "stylesheet";
+		link.type = "text/css";
+		link.href = window.location.search.match(/print-pdf/gi) ?
+			"reveal.js-3.8.0/css/print/pdf.css" :
+			"reveal.js-3.8.0/css/print/paper.css";
+		document.getElementsByTagName("head")[0].appendChild(link);
+	</script>
+</head>
+
+<body>
+	<div class="reveal">
+		<div class="slides">
+			<section>
+				<h3>The art of loosing data in git</h3>
+				<p>Or: How to recover data, you thought was lost</p>
+			</section>
+			<section>
+				<p>Git ...</p>
+				<ul>
+					<li>is a contentaddressable filesystem</li>
+					<li>is a key value database</li>
+					<li>has a VCS user interface</li>
+				</ul>
+			</section>
+			<section>
+				<h3>Values are stored in the objects directory</h3>
+				<p>.git/objects</p>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					find .git/objects
+					  .git/objects/
+					  .git/objects/info
+					  .git/objects/pack
+				</code></pre>
+			</section>
+			<section>
+				<h3>Write a value to the database</h3>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					echo "git is cool" | git hash-object --stdin -w
+					  159d4333ebae12e0e856bc47dd6c7b2edd9e75fd
+					find .git/objects
+					  .git/objects
+					  .git/objects/15
+					  .git/objects/15/9d4333ebae12e0e856bc47dd6c7b2edd9e75fd
+					  .git/objects/info
+					  .git/objects/pack
+				</code></pre>
+			</section>
+			<section>
+				<h3>Read a value from the database</h3>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					git cat-file -p 159d4333ebae12e0e856bc47dd6c7b2edd9e75fd
+					  git is cool
+				</code></pre>
+			</section>
+			<section>
+				<h3></h3>
+				<p>Data that is in the datastore is recoverable</p>
+				<p>Data that is not in the datastore is not</p>
+			</section>
+			<section>
+				<h3>High level commandas that add values to the datastore</h3>
+				<ul>
+					<li>git add</li>
+					<li>git clone</li>
+					<li>git fetch</li>
+					<li>git pull</li>
+				</ul>
+			</section>
+			<section>
+				<h3>Some Examples, how to recover data</h3>
+				<p>(not exhaustive)</p>
+			</section>
+			<section>
+				<p>Let's prepare our test repo</p>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					git clone https://github.com/reduxjs/redux.git
+				</code></pre>
+			</section>
+			<section>
+				<h3>rm -rf * (no local changes)</h3>
+				<p>Destroy</p>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					rm -rf *
+				</code></pre>
+				<div class="fragment fade-in">
+					<p>Recover</p>
+					<pre><code class="hljs bash" data-trim data-noescape>
+						git reset --hard
+						# OR
+						git checkout .
+ 					</code></pre>
+				</div>
+			</section>
+			<section>
+				<h3>rm -rf * (staged local changes)</h3>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					echo "ralph was here" >> LICENSE.md
+					git add .
+				</code></pre>
+				<p>Destroy</p>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					rm -rf *
+				</code></pre>
+				<div class="fragment fade-in">
+					<p>Recover</p>
+					<pre><code class="hljs bash" data-trim data-noescape>
+						# git checkout applies staged changes
+						git checkout .
+					</code></pre>
+				</div>
+			</section>
+			<section>
+				<h3>Why not git reset --hard?</h3>
+				<p>git reset --hard uses the last commit</p>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					git ls-tree -r HEAD .
+				</code></pre>
+				<p>git checkout uses the index</p>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					git ls-files --stage
+				</code></pre>
+				<div class="fragment fade-in">
+					<p>the difference:</p>
+					<pre><code class="hljs bash" data-trim data-noescape>
+						git ls-tree -r HEAD . | sed -e 's/ blob / /;s/\t/ /'> ../unchanged
+						git ls-files --stage | sed -e 's/ 0\t/ /' > ../changed
+						diff ../unchanged ../changed
+	
+						16c16
+						&lt; 100644 55bc8dfbe90cb54a2d6611e97007e5ee026486da LICENSE.md
+						---
+						&gt; 100644 a5f511f1c9c1c669e08b3f6898e90af3cc3c4d9a LICENSE.md
+					</code></pre>
+				</div>
+			</section>
+			<section>
+				<h3>rm -rf * (local changes added and removed)</h3>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					echo "ralph was here" >> LICENSE.md
+					git add LICENSE.md
+					git reset HEAD LICENSE.md
+				</code></pre>
+				<p>Destroy</p>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					rm -rf *
+				</code></pre>
+				<div class="fragment fade-in">
+					<p>Recover</p>
+					<pre><code class="hljs bash" data-trim data-noescape>
+						git checkout .
+						find .git/objects/ -type f -newermt '15 minutes ago' | 
+						  sed -e's/[./]//g;s/gitobjects//' | 
+						  while read hash ; do git cat-file -p $hash > $hash ; done
+						mv a5f511f1c9c1c669e08b3f6898e90af3cc3c4d9a LICENSE.md
+					</code></pre>
+				</div>
+			</section>
+			<section>
+				<h3>rm -rf * (local changes not staged)</h3>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					echo "ralph was here again" >> LICENSE.md
+				</code></pre>
+				<p>Destroy</p>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					rm -rf *
+				</code></pre>
+				<div class="fragment fade-in">
+					<p>Recover</p>
+					<pre><code class="hljs bash" data-trim data-noescape>
+						HAT SHIPPENS, BAD LUCK
+					</code></pre>
+				</div>
+			</section>
+			<section>
+				<h3>commit and reset --hard</h3>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					echo "ralph was here" >> LICENSE.md
+					git add LICENSE.md
+					git commit -m 'modified license'
+				</code></pre>
+				<p>Destroy</p>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					git reset --hard HEAD^
+				</code></pre>
+				<div class="fragment fade-in">
+					<p>Recover</p>
+					<pre><code class="hljs bash" data-trim data-noescape>
+						git reflog / git log -g
+						git lo HEAD@{1}
+						# undo reset --hard
+						git merge HEAD@{1}
+						# OR create recover branch
+						git checkout -b recover HEAD@{1}
+						# OR restore LICENSE.md
+						git checkout HEAD@{1} LICENSE.md
+						# OR show the contents of LICENSE.md
+						git show HEAD@{1}:LICENSE.md
+					</code></pre>
+				</div>
+			</section>
+			<section>
+				<h3>file corruption 1</h3>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					# some branch in redux must contain the commit with "ralph was here"
+					git clone --no-hardlinks redux cloned
+				</code></pre>
+				<p>Destroy</p>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					cd redux
+									
+					chmod 0666 .git/objects/a5/f511f1c9c1c669e08b3f6898e90af3cc3c4d9a
+					echo foo >> .git/objects/a5/f511f1c9c1c669e08b3f6898e90af3cc3c4d9a
+					chmod 0444 .git/objects/a5/f511f1c9c1c669e08b3f6898e90af3cc3c4d9a
+					git fsck
+				</code></pre>
+				<div class="fragment fade-in">
+					<p>Recover</p>
+					<pre><code class="hljs bash" data-trim data-noescape>
+						rm .git/objects/a5/f511f1c9c1c669e08b3f6898e90af3cc3c4d9a
+						cp ../cloned/.git/objects/a5/f511f1c9c1c669e08b3f6898e90af3cc3c4d9a .git/objects/a5
+					</code></pre>
+				</div>
+			</section>
+			<section>
+				<h3>file corruption 2</h3>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					# some branch in redux must contain the commit with "ralph was here"
+					git clone --no-hardlinks redux cloned
+				</code></pre>
+				<p>Destroy</p>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					cd redux
+
+					chmod 0666 .git/objects/a5/f511f1c9c1c669e08b3f6898e90af3cc3c4d9a
+					echo foo >> .git/objects/a5/f511f1c9c1c669e08b3f6898e90af3cc3c4d9a
+					chmod 0444 .git/objects/a5/f511f1c9c1c669e08b3f6898e90af3cc3c4d9a
+					git fsck
+
+					cd ../cloned					
+					git gc --prune=all
+				</code></pre>
+			</section>
+			<section>
+				<h3>file corruption 2</h3>
+				<div class="fragment fade-in">
+					<p>Recover</p>
+					<pre><code class="hljs bash" data-trim data-noescape>
+						cd cloned
+						git cat-file -p a5f511f > ~/tmp.txt
+						git cat-file -t a5f511f
+						
+						cd redux
+						rm .git/objects/a5/f511f1c9c1c669e08b3f6898e90af3cc3c4d9a
+						git hash-object -t blob -w ~/tmp.txt
+					</code></pre>
+				</div>
+				<div class="fragment fade-in">
+					<p>Recover</p>
+					<pre><code class="hljs bash" data-trim data-noescape>
+						cd cloned
+						mv .git/objects/pack/pack-* ..
+						git unpack-objects < ../pack-*.pack
+						
+						cd redux
+						rm .git/objects/a5/f511f1c9c1c669e08b3f6898e90af3cc3c4d9a
+						cp ../cloned/.git/objects/a5/f511f1c9c1c669e08b3f6898e90af3cc3c4d9a .git/objects/a5
+					</code></pre>
+				</div>
+			</section>
+			<section>
+				<h3>Usefull commands for extreme situations</h3>
+				<p>See which objects are in the store</p>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					git cat-file --batch-all-objects --unordered --batch-check
+				</code></pre>
+				<p>See all objects with hash and content</p>
+				<pre><code class="hljs bash" data-trim data-noescape>
+					git cat-file --batch-all-objects --unordered --batch
+				</code></pre>
+			</section>
+			<section>
+				<h3>If you really want to loose data ...</h3>
+				<p>... maybe, because someone commited a password which has to be removed from history</p>
+				<p>... then follow this instruction:</p>
+				<p style='border: 1px #e1e4e8 solid;
+				border-radius: 8px;
+				border-color: #d73a49;
+				background: #ffdce0'>
+					<a href="https://help.github.com/en/articles/removing-sensitive-data-from-a-repository">
+						https://help.github.com/en/articles/removing-sensitive-data-from-a-repository
+					</a>
+				</p>
+			</section>
+			<section>
+				<p>Warning from  <a href="https://help.github.com/en/articles/removing-sensitive-data-from-a-repository">removing-sensitive-data-from-a-repository</a> (03.10.2019)</p>
+				<div style='color: #24292e;
+				font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+				line-height: 1.5;
+				box-sizing: border-box;
+				border: 2px #e1e4e8 solid;
+				border-radius: 20px;
+				border-color: #d73a49;
+				background-color: #ffdce0;
+				margin-bottom: 24px;
+				padding: 16px;
+				font-size: 26px;'>
+					<p><strong>Warning: Once you have pushed a commit to GitHub, you should consider any data it contains to be compromised.</strong> If you committed a password, change it! If you committed a key, generate a new one.</p>
+					<p>This article tells you how to make commits with sensitive data unreachable from any branches or tags in your GitHub repository. However, it's important to note that those commits may still be accessible in any clones or forks of your repository, directly via their SHA-1 hashes in cached views on GitHub, and through any pull requests that reference them. You can't do anything about existing clones or forks of your repository, but you can permanently remove cached views and references to the sensitive data in pull requests on GitHub by contacting <a href="https://support.github.com/contact">GitHub Support</a> or <a href="https://premium.githubsupport.com">GitHub Premium Support</a>.</p>
+					</div>
+			</section>
+			<section>
+				<h1>Questions ?</h1>
+			</section>
 			</div>
-		</div>
+	</div>
 
-		<script src="reveal.js-3.8.0/js/reveal.js"></script>
+	<script src="reveal.js-3.8.0/js/reveal.js"></script>
 
-		<script>
-			// More info about config & dependencies:
-			// - https://github.com/hakimel/reveal.js#configuration
-			// - https://github.com/hakimel/reveal.js#dependencies
-			Reveal.initialize({
-				dependencies: [
-					{ src: 'reveal.js-3.8.0/plugin/markdown/marked.js' },
-					{ src: 'reveal.js-3.8.0/plugin/markdown/markdown.js' },
-					{ src: 'reveal.js-3.8.0/plugin/notes/notes.js', async: true },
-					{ src: 'reveal.js-3.8.0/plugin/highlight/highlight.js', async: true }
-				]
-			});
-		</script>
-	</body>
+	<script>
+		// More info about config & dependencies:
+		// - https://github.com/hakimel/reveal.js#configuration
+		// - https://github.com/hakimel/reveal.js#dependencies
+		Reveal.initialize({
+			dependencies: [{
+					src: "reveal.js-3.8.0/plugin/markdown/marked.js"
+				},
+				{
+					src: "reveal.js-3.8.0/plugin/markdown/markdown.js"
+				},
+				{
+					src: "reveal.js-3.8.0/plugin/notes/notes.js",
+					async: true
+				},
+				{
+					src: "reveal.js-3.8.0/plugin/highlight/highlight.js",
+					async: true
+				}
+			],
+			hash: true
+		});
+	</script>
+</body>
+
 </html>
